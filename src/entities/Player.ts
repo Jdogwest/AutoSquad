@@ -22,7 +22,7 @@ export class Player {
 
   constructor(scene: Phaser.Scene, x: number, y: number) {
     this.scene = scene;
-
+    
     this.sprite = scene.add.rectangle(x, y, 32, 32, 0x4ade80);
     scene.physics.add.existing(this.sprite);
   }
@@ -76,9 +76,8 @@ export class Player {
     if (this.isDead) return;
 
     this.isDead = true;
-    console.log('Player died');
 
-    this.scene.scene.restart();
+    this.scene.scene.start('GameOverScene');
   }
 
   getHp() {

@@ -49,13 +49,16 @@ export class GameScene extends Phaser.Scene {
     right: Phaser.Input.Keyboard.Key;
   };
 
+  private uiMargin = 16;
+
   constructor() {
     super('GameScene');
   }
 
   create() {
-    this.cursors = this.input.keyboard!.createCursorKeys();
+    this.scale.on('resize', this.onResize, this);
 
+    this.cursors = this.input.keyboard!.createCursorKeys();
     this.wasd = this.input.keyboard!.addKeys({
       up: Phaser.Input.Keyboard.KeyCodes.W,
       down: Phaser.Input.Keyboard.KeyCodes.S,
@@ -63,33 +66,34 @@ export class GameScene extends Phaser.Scene {
       right: Phaser.Input.Keyboard.KeyCodes.D,
     }) as any;
 
-    this.player = new Player(this, 400, 300);
+    // === Player ===
+    this.player = new Player(
+      this,
+      this.scale.width / 2,
+      this.scale.height / 2
+    );
 
-    this.hpText = this.add.text(16, 16, '', {
+    // === UI ===
+    this.hpText = this.add.text(0, 0, '', {
       fontSize: '20px',
       color: '#ffffff',
-    });
+    }).setScrollFactor(0);
+
+    this.goldText = this.add.text(0, 0, '', {
+      fontSize: '20px',
+      color: '#facc15',
+    }).setScrollFactor(0);
+
+    this.waveText = this.add.text(0, 0, '', {
+      fontSize: '24px',
+      color: '#ffffff',
+    }).setOrigin(0.5).setScrollFactor(0);
 
     this.updateHpText();
-
-    this.goldText = this.add.text(16, 44, '', {
-      fontSize: '20px',
-      color: '#facc15', // жёлтый
-    });
-
     this.updateGoldText();
 
-    this.waveText = this.add.text(
-      this.scale.width / 2,
-      NORMAL_WAVE_TEXT_Y,
-      '',
-      {
-        fontSize: '24px',
-        color: '#ffffff',
-      }
-    ).setOrigin(0.5);
-    
     this.loadProgress();
+    this.layoutUI();
 
     this.startWave();
 
@@ -232,8 +236,6 @@ export class GameScene extends Phaser.Scene {
     this.spawnTimer = 0;
 
     if (this.currentWave % 5 === 0) {
-      // === BOSS WAVE ===
-      this.waveText.setY(BOSS_WAVE_TEXT_Y);
       this.waveText.setText(`BOSS WAVE ${this.currentWave}`);
 
       this.boss = new BossEnemy(
@@ -248,6 +250,7 @@ export class GameScene extends Phaser.Scene {
         this.boss.getMaxHp()
       );
 
+      this.layoutUI();
       return;
     }
 
@@ -403,8 +406,8 @@ export class GameScene extends Phaser.Scene {
 
     this.shopUI = new ShopUI(
       this,
-      50,
-      50,
+      0,
+      0,
       () => this.gold,
       () => this.player.getUpgradeLevels(),
       () => this.tryUpgradeAttack(),
@@ -412,6 +415,8 @@ export class GameScene extends Phaser.Scene {
       () => this.tryUpgradeFireRate(),
       () => this.startNextWave()
     );
+
+    this.layoutUI();
   }
 
   private tryUpgradeAttack() {
@@ -469,6 +474,29 @@ export class GameScene extends Phaser.Scene {
   private handleGameOver() {
     this.bossHpBar?.destroy();
     this.bossHpBar = undefined;
-    this.scene.restart();
+  }
+
+  private layoutUI() {
+    const { width, height } = this.scale;
+
+    this.hpText.setPosition(this.uiMargin, this.uiMargin);
+    this.goldText.setPosition(this.uiMargin, this.uiMargin + 28);
+
+    this.waveText.setPosition(width / 2, 32);
+
+    this.bossHpBar?.layout(width);
+
+    this.shopUI?.layout(width, height);
+  }
+
+  private onResize(gameSize: Phaser.Structs.Size) {
+    const { width, height } = gameSize;
+
+    this.physics.world.setBounds(0, 0, width, height);
+
+    const body = (this.player as any)?.sprite?.body as Phaser.Physics.Arcade.Body;
+    body?.setCollideWorldBounds(true);
+
+    this.layoutUI();
   }
 }

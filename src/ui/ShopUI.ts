@@ -60,6 +60,8 @@ export class ShopUI {
 
     this.container = scene.add.container(x, y);
 
+    this.container.setScrollFactor(0);
+
     this.buildUI();
     this.update();
   }
@@ -197,5 +199,14 @@ export class ShopUI {
     } else {
       button.bg.setFillStyle(0x1f2937);
     }
+  }
+
+  layout(screenWidth: number, screenHeight: number) {
+    const bounds = this.container.getBounds();
+
+    this.container.setPosition(
+      screenWidth / 2 - bounds.width / 2,
+      screenHeight / 2 - bounds.height / 2
+    );
   }
 }
